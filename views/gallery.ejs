@@ -1,0 +1,33 @@
+<%- include('partials/header') %>
+
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="/">Beranda</a><span class="sep">/</span><span>Galeri</span></div>
+    <div class="eyebrow">Dokumentasi</div>
+    <h1>Galeri Kegiatan Kantor</h1>
+    <p>Dokumentasi kegiatan, sidang, dan momen penting bersama klien serta mitra kami.</p>
+  </div>
+</section>
+
+<section class="gallery-section" style="padding-top:90px;">
+  <div class="container-wide">
+    <% if (gallery.length) { %>
+    <div class="gallery-grid reveal">
+      <% gallery.forEach(g => { %>
+      <div class="gallery-item" data-full="<%= g.image %>" data-caption="<%= g.caption %>">
+        <img src="<%= g.image %>" alt="<%= g.caption %>">
+        <div class="cap"><%= g.caption %></div>
+      </div>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="empty-state reveal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 15l5-5 4 4 5-5 4 4"/></svg>
+      <p>Galeri kegiatan belum tersedia.</p>
+    </div>
+    <% } %>
+  </div>
+</section>
+<div class="lightbox"><button class="lb-close" aria-label="Tutup">&times;</button><img src="" alt=""><div class="lb-cap"></div></div>
+
+<%- include('partials/footer') %>

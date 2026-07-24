@@ -1,0 +1,149 @@
+{
+  "settings": {
+    "officeName": "GANANG SUKMA PERMANA, S.H. AND ASSOCIATES",
+    "shortName": "GSP & Associates",
+    "tagline": "Advokat & Konsultan Hukum",
+    "heroTitle": "Integritas Menjadi Kekuatan Hukum Anda",
+    "heroSubtitle": "Kantor hukum terpercaya yang berdiri teguh membela hak dan kepentingan klien melalui pendampingan hukum perdata, pidana, keluarga, dan korporasi yang presisi, rahasia, dan berintegritas.",
+    "aboutText": "GANANG SUKMA PERMANA, S.H. AND ASSOCIATES adalah kantor hukum yang berkomitmen memberikan pelayanan jasa hukum profesional, berintegritas, dan berorientasi pada hasil terbaik bagi klien. Ditopang oleh advokat dan konsultan hukum berpengalaman, kami hadir untuk mengawal setiap perkara dengan strategi yang tepat, komunikasi yang jelas, dan dedikasi penuh sejak konsultasi awal hingga penyelesaian perkara.\n\nKami percaya bahwa hukum bukan sekadar pasal di atas kertas, melainkan instrumen untuk menegakkan keadilan dan melindungi kepentingan yang sah. Atas dasar itu, setiap perkara kami tangani dengan riset mendalam, kehati-hatian, dan pendekatan yang manusiawi terhadap klien.",
+    "visionText": "Menjadi kantor hukum terpercaya yang menjunjung tinggi integritas, profesionalisme, dan keadilan dalam setiap layanan hukum yang diberikan.",
+    "missionText": "Memberikan pendampingan dan konsultasi hukum yang solutif, transparan, serta berlandaskan etika profesi advokat, guna melindungi hak dan kepentingan klien secara optimal.",
+    "phone": "082322635657",
+    "phoneDisplay": "0823-2263-5657",
+    "whatsapp": "6282322635657",
+    "email": "ganangsukmapermana@gmail.com",
+    "address": "Jl. Raya Moga - Pulosari, Campakawulung, Banyumudal, Kec. Moga, Kabupaten Pemalang, Jawa Tengah 52354, Indonesia",
+    "operationalHours": "Senin - Jumat, 08.00 - 17.00 WIB",
+    "instagram": "ganang_pengacara_pemalang",
+    "tiktok": "ganang_pengacarapemalang",
+    "facebook": "",
+    "mapEmbedUrl": "https://www.google.com/maps?q=-6.9085928,109.385117&z=16&output=embed",
+    "mapUrl": "https://maps.app.goo.gl/x2nZc945XyiJsde28",
+    "totalCasesHandled": 1000,
+    "statsYear": 2026,
+    "ongoingCases": 85,
+    "heroImage": "/uploads/hero/hero-bg-default.jpg"
+  },
+  "admin": {
+    "username": "admin",
+    "passwordHash": ""
+  },
+  "team": [
+    {
+      "id": "mp-ganang",
+      "name": "Ganang Sukma Permana, S.H.",
+      "title": "Managing Partner",
+      "role": "managing-partner",
+      "photo": "/uploads/team/ganang-sukma-permana.jpeg",
+      "bio": "Managing Partner GANANG SUKMA PERMANA, S.H. AND ASSOCIATES. Memimpin firma dengan fokus pada penanganan perkara pidana, perdata, dan hukum keluarga dengan pendekatan strategis dan berintegritas.",
+      "order": 1
+    },
+    {
+      "id": "p-akhfad",
+      "name": "Akhfad Sabilla, S.H.",
+      "title": "Partner",
+      "role": "partner",
+      "photo": "/uploads/team/akhfad-sabilla.jpeg",
+      "bio": "Partner dengan konsentrasi pada hukum perdata dan penyelesaian sengketa.",
+      "order": 2
+    },
+    {
+      "id": "p-julio",
+      "name": "Julio Belnanda Harianja, S.H.",
+      "title": "Partner",
+      "role": "partner",
+      "photo": "/uploads/team/julio-belnanda-harianja.png",
+      "bio": "Partner dengan konsentrasi pada hukum pidana dan hukum perusahaan.",
+      "order": 3
+    },
+    {
+      "id": "p-hidayah",
+      "name": "Hidayah Pembayun, S.Sos",
+      "title": "Partner",
+      "role": "partner",
+      "photo": "",
+      "bio": "Partner GANANG SUKMA PERMANA, S.H. AND ASSOCIATES.",
+      "order": 4
+    },
+    {
+      "id": "a-syahrul",
+      "name": "Ahmad Syahrul Iliyin",
+      "title": "Associate",
+      "role": "associate",
+      "photo": "",
+      "bio": "Associate yang mendampingi penanganan perkara dan riset hukum.",
+      "order": 5
+    },
+    {
+      "id": "a-dwi",
+      "name": "Dwi Putri Lestari",
+      "title": "Associate",
+      "role": "associate",
+      "photo": "",
+      "bio": "Associate yang mendampingi penanganan perkara dan riset hukum.",
+      "order": 6
+    }
+  ],
+  "services": [
+    {
+      "id": "perdata",
+      "title": "Hukum Perdata",
+      "icon": "scale",
+      "desc": "Penanganan sengketa perdata, wanprestasi, gugatan ganti rugi, serta penyelesaian sengketa di luar maupun di dalam pengadilan.",
+      "order": 1
+    },
+    {
+      "id": "pidana",
+      "title": "Hukum Pidana",
+      "icon": "gavel",
+      "desc": "Pendampingan dan pembelaan pada setiap tahap proses pidana, mulai dari penyelidikan, penyidikan, praperadilan, hingga persidangan di pengadilan.",
+      "order": 2
+    },
+    {
+      "id": "islam",
+      "title": "Hukum Islam",
+      "icon": "book",
+      "desc": "Konsultasi dan pendampingan perkara perkawinan, waris, wasiat, hibah, wakaf, zakat, infaq, sedekah, serta ekonomi syariah.",
+      "order": 3
+    },
+    {
+      "id": "perceraian",
+      "title": "Perceraian",
+      "icon": "heart",
+      "desc": "Pendampingan proses perceraian di Pengadilan Agama maupun Pengadilan Negeri secara profesional, rahasia, dan berpihak pada kepentingan klien.",
+      "order": 4
+    },
+    {
+      "id": "gono-gini",
+      "title": "Harta Gono-Gini",
+      "icon": "users",
+      "desc": "Penyelesaian sengketa harta bersama (gono-gini) pasca-perceraian secara adil bagi kedua belah pihak.",
+      "order": 5
+    },
+    {
+      "id": "waris",
+      "title": "Waris",
+      "icon": "document",
+      "desc": "Konsultasi dan pendampingan pembagian warisan sesuai hukum yang berlaku, termasuk penyelesaian sengketa waris.",
+      "order": 6
+    },
+    {
+      "id": "perusahaan",
+      "title": "Hukum Perusahaan",
+      "icon": "building",
+      "desc": "Legal opinion, legal drafting, legalitas perusahaan, serta pendampingan hukum korporasi dan kerja sama bisnis.",
+      "order": 7
+    },
+    {
+      "id": "keluarga",
+      "title": "Hukum Keluarga",
+      "icon": "family",
+      "desc": "Pendampingan menyeluruh untuk permasalahan hukum keluarga, mulai dari hak asuh anak, nafkah, perwalian, hingga dispensasi nikah dan itsbat nikah.",
+      "order": 8
+    }
+  ],
+  "articles": [],
+  "gallery": [],
+  "partners": [],
+  "messages": []
+}

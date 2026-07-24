@@ -1,0 +1,219 @@
+<%- include('partials/header') %>
+
+<section class="hero <%= settings.heroImage ? 'has-bg' : '' %>" <% if (settings.heroImage) { %>style="background-image:url('<%= settings.heroImage %>');"<% } %>>
+  <% if (settings.heroImage) { %><div class="hero-overlay"></div><% } %>
+  <div class="hero-crest"><img src="/images/logo.png" alt=""></div>
+  <div class="container-wide">
+    <div class="hero-inner">
+      <div class="hero-kicker"><span class="rule"></span><span>Advokat &amp; Konsultan Hukum · Pemalang</span></div>
+      <h1><%- settings.heroTitle.replace(/Hukum/, '<em>Hukum</em>') %></h1>
+      <p><%= settings.heroSubtitle %></p>
+      <div class="hero-actions">
+        <a href="/kontak" class="btn btn-primary">Konsultasi Sekarang</a>
+        <a href="/layanan" class="btn btn-outline">Lihat Layanan Kami</a>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue"><span>Scroll</span><span class="line"></span></div>
+</section>
+
+<div class="trust-strip">
+  <div class="trust-track">
+    <span>Hukum Pidana <em>&middot;</em></span><span>Hukum Perdata <em>&middot;</em></span><span>Hukum Keluarga <em>&middot;</em></span><span>Waris &amp; Gono-Gini <em>&middot;</em></span><span>Hukum Perusahaan <em>&middot;</em></span><span>Konsultasi Hukum <em>&middot;</em></span>
+    <span>Hukum Pidana <em>&middot;</em></span><span>Hukum Perdata <em>&middot;</em></span><span>Hukum Keluarga <em>&middot;</em></span><span>Waris &amp; Gono-Gini <em>&middot;</em></span><span>Hukum Perusahaan <em>&middot;</em></span><span>Konsultasi Hukum <em>&middot;</em></span>
+  </div>
+</div>
+
+<section class="stats-band">
+  <div class="stats-band-crest"><img src="/images/logo.png" alt=""></div>
+  <div class="container-wide">
+    <div class="stats-band-grid reveal">
+      <div class="stats-band-item">
+        <strong><%= settings.totalCasesHandled %><span class="plus">+</span></strong>
+        <span>Total Perkara Ditangani <em>(sejak berdiri s/d <%= settings.statsYear %>)</em></span>
+      </div>
+      <div class="stats-band-divider"></div>
+      <div class="stats-band-item">
+        <strong><%= settings.ongoingCases %></strong>
+        <span>Perkara Sedang Berjalan <em>saat ini</em></span>
+      </div>
+      <div class="stats-band-divider"></div>
+      <div class="stats-band-item">
+        <strong><%= services.length %><span class="plus">+</span></strong>
+        <span>Bidang Layanan Hukum <em>ditangani</em></span>
+      </div>
+      <div class="stats-band-divider"></div>
+      <div class="stats-band-item">
+        <strong>100<span class="plus">%</span></strong>
+        <span>Kerahasiaan &amp; Integritas <em>klien</em></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="about-split">
+  <div class="container-wide">
+    <div class="about-grid">
+      <div class="about-media reveal">
+        <div class="frame">
+          <img src="/uploads/team/ganang-sukma-permana.jpeg" alt="Ganang Sukma Permana, S.H. — Managing Partner">
+        </div>
+        <div class="badge"><strong>GSP</strong><span>&amp; Associates</span></div>
+      </div>
+      <div class="about-copy reveal reveal-2">
+        <div class="eyebrow">Tentang Kami</div>
+        <h2 class="section-title">Membela Kepentingan Anda dengan Integritas &amp; Presisi Hukum</h2>
+        <p><%= settings.aboutText.split('\n\n')[0] %></p>
+        <div class="pillars">
+          <div class="pillar">
+            <h4>Berintegritas</h4>
+            <p>Setiap perkara ditangani dengan kejujuran, kehati-hatian, dan kepatuhan penuh pada kode etik advokat.</p>
+          </div>
+          <div class="pillar">
+            <h4>Berpengalaman</h4>
+            <p>Ditangani langsung oleh advokat dan konsultan hukum yang kompeten di bidangnya masing-masing.</p>
+          </div>
+        </div>
+        <div style="margin-top:34px;">
+          <a href="/tentang-kami" class="btn-ghost">Selengkapnya Tentang Kami <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="services">
+  <div class="container-wide">
+    <div class="section-head center reveal">
+      <div class="eyebrow center">Bidang Layanan</div>
+      <h2 class="section-title">Layanan Hukum Kami</h2>
+      <p class="section-lead">Pendampingan hukum menyeluruh, mulai dari konsultasi hingga penyelesaian perkara di persidangan.</p>
+    </div>
+    <div class="service-grid reveal reveal-2">
+      <% services.forEach((s, i) => { %>
+      <div class="service-card">
+        <span class="service-num">0<%= i + 1 %></span>
+        <div class="service-icon"><%- include('partials/icons', {icon: s.icon}) %></div>
+        <h3><%= s.title %></h3>
+        <p><%= s.desc %></p>
+      </div>
+      <% }) %>
+    </div>
+    <div class="services-cta reveal">
+      <a href="/layanan" class="btn btn-outline">Lihat Semua Layanan</a>
+    </div>
+  </div>
+</section>
+
+<section class="team-section">
+  <div class="container-wide">
+    <div class="section-head center reveal">
+      <div class="eyebrow center">Tim Kami</div>
+      <h2 class="section-title">Advokat &amp; Konsultan Hukum</h2>
+      <p class="section-lead">Dipimpin oleh advokat berpengalaman yang berdedikasi mengawal kepentingan hukum Anda.</p>
+    </div>
+    <div class="team-grid reveal reveal-2">
+      <% team.forEach(m => { %>
+      <div class="team-card">
+        <div class="ph <%= !m.photo ? 'empty' : '' %>">
+          <% if (m.photo) { %><img src="<%= m.photo %>" alt="<%= m.name %>">
+          <% } else { %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><% } %>
+        </div>
+        <h4><%= m.name %></h4>
+        <span class="title"><%= m.title %></span>
+      </div>
+      <% }) %>
+    </div>
+    <div class="services-cta reveal">
+      <a href="/tim-kami" class="btn btn-outline">Lihat Seluruh Tim</a>
+    </div>
+  </div>
+</section>
+
+<section class="news-section">
+  <div class="container-wide">
+    <div class="section-head center reveal">
+      <div class="eyebrow center">Berita &amp; Artikel</div>
+      <h2 class="section-title">Wawasan &amp; Kabar Terbaru</h2>
+      <p class="section-lead">Ulasan hukum, kegiatan firma, dan informasi terkini seputar dunia hukum.</p>
+    </div>
+    <% if (articles.length) { %>
+    <div class="news-grid reveal reveal-2">
+      <% articles.forEach(a => { %>
+      <a href="/berita/<%= a.slug %>" class="news-card">
+        <div class="thumb <%= !a.image ? 'empty' : '' %>">
+          <% if (a.image) { %><img src="<%= a.image %>" alt="<%= a.title %>">
+          <% } else { %><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7 3h7l4 4v14a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg><% } %>
+        </div>
+        <div class="body">
+          <span class="news-date"><%= new Date(a.date).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) %></span>
+          <h3><%= a.title %></h3>
+          <p><%= a.excerpt %></p>
+          <span class="btn-ghost">Baca Selengkapnya <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="empty-state reveal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7 3h7l4 4v14a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/></svg>
+      <p>Artikel belum tersedia. Nantikan kabar terbaru dari kami.</p>
+    </div>
+    <% } %>
+  </div>
+</section>
+
+<% if (gallery.length) { %>
+<section class="gallery-section">
+  <div class="container-wide">
+    <div class="section-head center reveal">
+      <div class="eyebrow center">Dokumentasi</div>
+      <h2 class="section-title">Galeri Kegiatan</h2>
+    </div>
+    <div class="gallery-grid reveal reveal-2">
+      <% gallery.forEach(g => { %>
+      <div class="gallery-item" data-full="<%= g.image %>" data-caption="<%= g.caption %>">
+        <img src="<%= g.image %>" alt="<%= g.caption %>">
+        <div class="cap"><%= g.caption %></div>
+      </div>
+      <% }) %>
+    </div>
+    <div class="services-cta reveal">
+      <a href="/galeri" class="btn btn-outline">Lihat Semua Galeri</a>
+    </div>
+  </div>
+</section>
+<div class="lightbox"><button class="lb-close" aria-label="Tutup">&times;</button><img src="" alt=""><div class="lb-cap"></div></div>
+<% } %>
+
+<% if (partners.length) { %>
+<section class="partners-section">
+  <div class="container-wide">
+    <div class="section-head center reveal">
+      <div class="eyebrow center">Kepercayaan</div>
+      <h2 class="section-title">Mitra Kerja Sama</h2>
+    </div>
+    <div class="partners-grid reveal reveal-2">
+      <% partners.forEach(p => { %>
+      <a href="<%= p.url || '/mitra' %>" target="<%= p.url ? '_blank' : '_self' %>" rel="noopener" class="partner-tile">
+        <% if (p.logo) { %><img src="<%= p.logo %>" alt="<%= p.name %>"><% } else { %><span class="initial"><%= p.name %></span><% } %>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="cta-band">
+  <div class="container">
+    <div class="eyebrow center" style="color:#fff;">Butuh Bantuan Hukum?</div>
+    <h2>Konsultasikan Perkara Anda Bersama Kami Sekarang</h2>
+    <p>Tim advokat kami siap mendengarkan permasalahan Anda dan memberikan solusi hukum yang tepat dan rahasia.</p>
+    <div class="hero-actions" style="justify-content:center;">
+      <a href="https://wa.me/<%= settings.whatsapp %>" target="_blank" rel="noopener" class="btn btn-primary">Chat via WhatsApp</a>
+      <a href="/kontak" class="btn btn-outline">Kirim Pesan</a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

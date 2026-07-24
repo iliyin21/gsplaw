@@ -1,0 +1,38 @@
+<%- include('partials/head') %>
+
+<div class="admin-card">
+  <h2>Unggah Foto Kegiatan</h2>
+  <form action="/admin/gallery" method="POST" enctype="multipart/form-data">
+    <div class="form-grid">
+      <div class="field full"><label for="caption">Keterangan Foto</label><input type="text" id="caption" name="caption" placeholder="Contoh: Sidang Mediasi di Pengadilan Negeri Pemalang"></div>
+      <div class="field full"><label for="image">Pilih Foto</label><input type="file" id="image" name="image" accept="image/*" required></div>
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Unggah Foto</button></div>
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="toolbar"><h1>Galeri (<%= gallery.length %>)</h1></div>
+  <table>
+    <thead><tr><th>Foto</th><th>Keterangan</th><th>Tanggal</th><th></th></tr></thead>
+    <tbody>
+      <% if (!gallery.length) { %>
+      <tr><td colspan="4" class="empty-row">Belum ada foto kegiatan.</td></tr>
+      <% } %>
+      <% gallery.forEach(g => { %>
+      <tr>
+        <td><img class="table-thumb" src="<%= g.image %>" alt="<%= g.caption %>"></td>
+        <td><%= g.caption || '—' %></td>
+        <td><%= new Date(g.date).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}) %></td>
+        <td>
+          <form action="/admin/gallery/<%= g.id %>?_method=DELETE" method="POST" data-confirm="Hapus foto ini?">
+            <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('partials/foot') %>
