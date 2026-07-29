@@ -68,7 +68,7 @@
 
 <div class="admin-card">
   <div class="toolbar"><h1>Galeri (<%= gallery.length %>)</h1></div>
-  <table>
+  <div class="table-scroll"><table>
     <thead><tr><th>Pratinjau</th><th>Tipe</th><th>Keterangan</th><th>Tanggal</th><th></th></tr></thead>
     <tbody>
       <% if (!gallery.length) { %>
@@ -95,7 +95,7 @@
       </tr>
       <% }) %>
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 <%- include('partials/foot') %>

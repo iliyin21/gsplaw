@@ -16,7 +16,7 @@
 
 <div class="admin-card">
   <div class="toolbar"><h1>Daftar Mitra (<%= partners.length %>)</h1></div>
-  <table>
+  <div class="table-scroll"><table>
     <thead><tr><th>Logo</th><th>Nama</th><th>Deskripsi</th><th></th></tr></thead>
     <tbody>
       <% if (!partners.length) { %>
@@ -38,7 +38,7 @@
       </tr>
       <% }) %>
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 <%- include('partials/foot') %>

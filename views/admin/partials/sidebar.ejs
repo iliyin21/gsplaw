@@ -3,7 +3,11 @@
     <img src="/images/logo.png" alt="Logo">
     <div>GSP &amp; Associates<span>Admin Panel</span></div>
   </div>
-  <nav class="admin-nav">
+  <button type="button" class="admin-mobile-toggle" id="admin-mobile-toggle">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/></svg>
+    Menu Admin
+  </button>
+  <nav class="admin-nav" id="admin-nav">
     <a href="/admin" class="<%= currentPath === '/admin' ? 'active' : '' %>">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
       Dashboard

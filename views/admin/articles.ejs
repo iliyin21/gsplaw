@@ -6,7 +6,7 @@
 </div>
 
 <div class="admin-card">
-  <table>
+  <div class="table-scroll"><table>
     <thead><tr><th>Cover</th><th>Judul</th><th>Tanggal</th><th>Status</th><th></th></tr></thead>
     <tbody>
       <% if (!articles.length) { %>
@@ -32,7 +32,7 @@
       </tr>
       <% }) %>
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 <%- include('partials/foot') %>

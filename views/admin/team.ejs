@@ -31,7 +31,7 @@
 
 <div class="admin-card">
   <div class="toolbar"><h1>Daftar Tim (<%= team.length %>)</h1></div>
-  <table>
+  <div class="table-scroll"><table>
     <thead><tr><th>Foto</th><th>Nama</th><th>Jabatan</th><th>Kategori</th><th>Urutan</th><th></th></tr></thead>
     <tbody>
       <% if (!team.length) { %>
@@ -87,7 +87,7 @@
       </tr>
       <% }) %>
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 <%- include('partials/foot') %>

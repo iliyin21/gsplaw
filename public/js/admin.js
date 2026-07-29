@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Mobile admin nav toggle
+  const adminToggle = document.getElementById('admin-mobile-toggle');
+  const adminNav = document.getElementById('admin-nav');
+  if (adminToggle && adminNav) {
+    adminToggle.addEventListener('click', () => adminNav.classList.toggle('mobile-open'));
+  }
+
   // Confirm before delete
   document.querySelectorAll('form[data-confirm]').forEach(form => {
     form.addEventListener('submit', (e) => {
