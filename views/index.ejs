@@ -172,8 +172,13 @@
     </div>
     <div class="gallery-grid reveal reveal-2">
       <% gallery.forEach(g => { %>
-      <div class="gallery-item" data-full="<%= g.image %>" data-caption="<%= g.caption %>">
+      <div class="gallery-item <%= g.type === 'video' ? 'is-video' : '' %>" data-type="<%= g.type || 'photo' %>" data-video-source="<%= g.videoSource || '' %>" data-full="<%= g.image %>" data-video-id="<%= g.videoId || '' %>" data-video-url="<%= g.videoUrl || '' %>" data-caption="<%= g.caption %>">
+        <% if (g.type === 'video' && g.videoSource === 'upload') { %>
+        <video src="<%= g.videoUrl %>" muted preload="metadata"></video>
+        <% } else { %>
         <img src="<%= g.image %>" alt="<%= g.caption %>">
+        <% } %>
+        <% if (g.type === 'video') { %><div class="play-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div><% } %>
         <div class="cap"><%= g.caption %></div>
       </div>
       <% }) %>
@@ -183,7 +188,13 @@
     </div>
   </div>
 </section>
-<div class="lightbox"><button class="lb-close" aria-label="Tutup">&times;</button><img src="" alt=""><div class="lb-cap"></div></div>
+<div class="lightbox">
+  <button class="lb-close" aria-label="Tutup">&times;</button>
+  <img src="" alt="">
+  <div class="lb-video-wrap"><iframe src="" title="Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+  <video class="lb-video-native" controls playsinline></video>
+  <div class="lb-cap"></div>
+</div>
 <% } %>
 
 <% if (partners.length) { %>

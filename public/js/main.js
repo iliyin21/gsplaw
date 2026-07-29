@@ -43,17 +43,46 @@ document.addEventListener('DOMContentLoaded', () => {
   const lightbox = document.querySelector('.lightbox');
   if (lightbox) {
     const lbImg = lightbox.querySelector('img');
+    const lbVideoWrap = lightbox.querySelector('.lb-video-wrap');
+    const lbIframe = lbVideoWrap ? lbVideoWrap.querySelector('iframe') : null;
+    const lbNativeVideo = lightbox.querySelector('.lb-video-native');
     const lbCap = lightbox.querySelector('.lb-cap');
+
+    const hideAll = () => {
+      lbImg.style.display = 'none';
+      if (lbVideoWrap) lbVideoWrap.style.display = 'none';
+      if (lbNativeVideo) { lbNativeVideo.style.display = 'none'; lbNativeVideo.pause(); }
+    };
+
     document.querySelectorAll('.gallery-item').forEach(item => {
       item.addEventListener('click', () => {
-        lbImg.src = item.dataset.full || item.querySelector('img').src;
+        const isVideo = item.dataset.type === 'video';
+        const source = item.dataset.videoSource;
+        hideAll();
+        if (isVideo && source === 'upload' && lbNativeVideo) {
+          lbNativeVideo.src = item.dataset.videoUrl;
+          lbNativeVideo.style.display = 'block';
+          lbNativeVideo.play().catch(() => {});
+        } else if (isVideo && source === 'youtube' && lbIframe) {
+          lbIframe.src = `https://www.youtube.com/embed/${item.dataset.videoId}?autoplay=1&rel=0`;
+          lbVideoWrap.style.display = 'block';
+        } else {
+          lbImg.src = item.dataset.full || item.querySelector('img, video').src;
+          lbImg.style.display = 'block';
+        }
         lbCap.textContent = item.dataset.caption || '';
         lightbox.classList.add('open');
       });
     });
-    lightbox.querySelector('.lb-close').addEventListener('click', () => lightbox.classList.remove('open'));
-    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) lightbox.classList.remove('open'); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') lightbox.classList.remove('open'); });
+
+    const closeLightbox = () => {
+      lightbox.classList.remove('open');
+      if (lbIframe) lbIframe.src = ''; // stop YouTube playback
+      if (lbNativeVideo) { lbNativeVideo.pause(); lbNativeVideo.removeAttribute('src'); lbNativeVideo.load(); }
+    };
+    lightbox.querySelector('.lb-close').addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
   }
 
   // Auto-hide flash messages
