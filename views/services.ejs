@@ -1,11 +1,15 @@
 <%- include('partials/header') %>
 
-<section class="page-hero">
+<section class="page-hero <%= settings.heroImage ? 'has-bg' : '' %>" <% if (settings.heroImage) { %>style="background-image:url('<%= settings.heroImage %>');"<% } %>>
+  <% if (settings.heroImage) { %><div class="hero-overlay"></div><% } %>
   <div class="container">
     <div class="breadcrumb"><a href="/">Beranda</a><span class="sep">/</span><span>Layanan</span></div>
     <div class="eyebrow">Bidang Layanan</div>
     <h1>Layanan Hukum yang Kami Tangani</h1>
     <p>Kami memberikan pendampingan hukum menyeluruh mulai dari konsultasi awal, negosiasi, mediasi, hingga litigasi di pengadilan.</p>
+    <% if (settings.heroImage) { %>
+    <div class="hero-mobile-photo"><img src="<%= settings.heroImage %>" alt="Tim <%= settings.officeName %>"></div>
+    <% } %>
   </div>
 </section>
 

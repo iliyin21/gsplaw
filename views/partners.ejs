@@ -1,11 +1,15 @@
 <%- include('partials/header') %>
 
-<section class="page-hero">
+<section class="page-hero <%= settings.heroImage ? 'has-bg' : '' %>" <% if (settings.heroImage) { %>style="background-image:url('<%= settings.heroImage %>');"<% } %>>
+  <% if (settings.heroImage) { %><div class="hero-overlay"></div><% } %>
   <div class="container">
     <div class="breadcrumb"><a href="/">Beranda</a><span class="sep">/</span><span>Mitra</span></div>
     <div class="eyebrow">Kepercayaan</div>
     <h1>Mitra Kerja Sama Kami</h1>
     <p>Perusahaan dan lembaga yang mempercayakan penanganan aspek legal mereka kepada kami.</p>
+    <% if (settings.heroImage) { %>
+    <div class="hero-mobile-photo"><img src="<%= settings.heroImage %>" alt="Tim <%= settings.officeName %>"></div>
+    <% } %>
   </div>
 </section>
 
