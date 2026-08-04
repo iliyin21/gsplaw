@@ -411,14 +411,14 @@ app.get('/admin/gallery', requireAuth, h(async (req, res) => {
 }));
 
 app.post('/admin/gallery', requireAuth, uploadGalleryItem.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), h(async (req, res) => {
-  const { caption, type, videoSource, videoUrl } = req.body;
+  const { type, videoSource, videoUrl, captionPhoto, captionVideoUpload, captionVideoYoutube } = req.body;
   const imageFile = req.files && req.files.image && req.files.image[0];
   const videoFile = req.files && req.files.video && req.files.video[0];
 
   if (type === 'video') {
     if (videoSource === 'upload') {
       if (!videoFile) { req.flash('error', 'Pilih file video terlebih dahulu.'); return res.redirect('/admin/gallery'); }
-      await db.Gallery.createVideo({ caption, videoSource: 'upload', videoUrl: `/uploads/gallery-videos/${videoFile.filename}` });
+      await db.Gallery.createVideo({ caption: captionVideoUpload, videoSource: 'upload', videoUrl: `/uploads/gallery-videos/${videoFile.filename}` });
       req.flash('success', 'Video kegiatan berhasil diunggah.');
       return res.redirect('/admin/gallery');
     }
@@ -427,13 +427,13 @@ app.post('/admin/gallery', requireAuth, uploadGalleryItem.fields([{ name: 'image
       req.flash('error', 'Link YouTube tidak valid. Pastikan link berupa youtube.com/watch?v=... atau youtu.be/...');
       return res.redirect('/admin/gallery');
     }
-    await db.Gallery.createVideo({ caption, videoSource: 'youtube', videoId, image: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` });
+    await db.Gallery.createVideo({ caption: captionVideoYoutube, videoSource: 'youtube', videoId, image: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` });
     req.flash('success', 'Video kegiatan berhasil ditambahkan.');
     return res.redirect('/admin/gallery');
   }
 
   if (!imageFile) { req.flash('error', 'Pilih foto terlebih dahulu.'); return res.redirect('/admin/gallery'); }
-  await db.Gallery.createPhoto({ caption, image: `/uploads/gallery/${imageFile.filename}` });
+  await db.Gallery.createPhoto({ caption: captionPhoto, image: `/uploads/gallery/${imageFile.filename}` });
   req.flash('success', 'Foto kegiatan berhasil diunggah.');
   res.redirect('/admin/gallery');
 }));
