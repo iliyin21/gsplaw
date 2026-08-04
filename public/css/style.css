@@ -583,7 +583,6 @@ h1,h2,h3,h4{ font-family:var(--serif); font-weight:600; line-height:1.15; margin
 .page-hero{
   padding:170px 0 90px; position:relative; overflow:hidden;
   background:radial-gradient(ellipse 700px 500px at 15% 0%, rgba(163,22,27,.2), transparent 60%), var(--ink);
-  border-bottom:1px solid var(--line);
 }
 .page-hero.has-bg{ background-size:cover; background-position:center 30%; background-repeat:no-repeat; }
 .page-hero .hero-overlay{
