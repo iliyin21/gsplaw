@@ -316,11 +316,10 @@ h1,h2,h3,h4{ font-family:var(--serif); font-weight:600; line-height:1.15; margin
 .about-media img{ width:100%; aspect-ratio:4/5; object-fit:cover; filter:grayscale(.15) contrast(1.05); }
 .about-media .badge{
   position:absolute; bottom:-28px; left:-28px; background:var(--red); padding:22px 26px;
-  box-shadow:var(--shadow-lg);
-  display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;
+  box-shadow:var(--shadow-lg); display:flex; flex-direction:column; align-items:center; gap:10px;
 }
-.about-media .badge-logo{ width:42px; height:auto; filter:brightness(0) invert(1); }
-.about-media .badge span{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.85); white-space:nowrap; }
+.about-media .badge img{ width:40px; height:auto; filter:brightness(0) invert(1); }
+.about-media .badge span{ font-family:var(--serif); font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#fff; white-space:nowrap; }
 .about-copy p{ color:var(--muted); margin-bottom:18px; white-space:pre-line; }
 .pillars{ display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:34px; }
 .pillar{ border:1px solid var(--line); padding:24px; transition:border-color .3s; }
@@ -586,7 +585,7 @@ h1,h2,h3,h4{ font-family:var(--serif); font-weight:600; line-height:1.15; margin
   background:radial-gradient(ellipse 700px 500px at 15% 0%, rgba(163,22,27,.2), transparent 60%), var(--ink);
   border-bottom:1px solid var(--line);
 }
-.page-hero.has-bg{ background-size:cover; background-position:center 30%; background-repeat:no-repeat; border-bottom:none; }
+.page-hero.has-bg{ background-size:cover; background-position:center 30%; background-repeat:no-repeat; }
 .page-hero .hero-overlay{
   background:
     linear-gradient(180deg, rgba(8,8,10,.82) 0%, rgba(8,8,10,.68) 45%, rgba(8,8,10,.92) 100%),

@@ -8,45 +8,35 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const slugify = require('slugify');
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
+const db = require('./db');
 
-const DB_PATH = path.join(__dirname, 'data', 'db.json');
-const SEED_PATH = path.join(__dirname, 'data', 'db.seed.json');
+// ---- Persistent file storage location (uploaded photos/videos) ----
+// The database itself now lives in MySQL (see db.js), but uploaded files
+// still need a disk location. On platforms with ephemeral disks, either
+// mount a persistent volume at STORAGE_DIR, or (recommended for Hostinger
+// Web Apps / Railway without a volume) point STORAGE_DIR at a normal disk
+// path -- files just won't survive a redeploy unless the disk is persistent.
+const STORAGE_DIR = process.env.STORAGE_DIR || path.join(__dirname, 'storage');
+const UPLOADS_DIR = path.join(STORAGE_DIR, 'uploads');
+const SEED_UPLOADS_DIR = path.join(__dirname, 'data', 'seed-uploads'); // default photos shipped with the app (team, hero)
 
-// ---- First-run setup: seed database & default admin password ----
-if (!fs.existsSync(DB_PATH)) {
-  const seed = JSON.parse(fs.readFileSync(SEED_PATH, 'utf-8'));
-  const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'gsp@admin123';
-  seed.admin.username = process.env.ADMIN_DEFAULT_USERNAME || 'admin';
-  seed.admin.passwordHash = bcrypt.hashSync(defaultPassword, 10);
-  fs.writeFileSync(DB_PATH, JSON.stringify(seed, null, 2));
-  console.log('==================================================');
-  console.log(' Database baru dibuat: data/db.json');
-  console.log(' Login admin default:');
-  console.log('   Username : ' + seed.admin.username);
-  console.log('   Password : ' + defaultPassword);
-  console.log(' -> Segera login ke /admin dan ganti password di menu Pengaturan.');
-  console.log('==================================================');
-}
+if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-const adapter = new FileSync(DB_PATH);
-const db = low(adapter);
-
-// ---- Migration: make sure newer settings fields exist for sites created with an older version ----
-(function migrateSettings() {
-  const settings = db.get('settings').value() || {};
-  const defaults = {
-    totalCasesHandled: 1000, statsYear: new Date().getFullYear(), ongoingCases: 0,
-    heroImage: '', mapEmbedUrl: '', mapUrl: ''
-  };
-  const missing = {};
-  Object.keys(defaults).forEach((key) => {
-    if (settings[key] === undefined) missing[key] = defaults[key];
+// Seed the default team photos & hero photo into persistent storage (only fills in files that don't exist yet,
+// so it never overwrites photos an admin has already replaced).
+if (fs.existsSync(SEED_UPLOADS_DIR)) {
+  fs.readdirSync(SEED_UPLOADS_DIR, { withFileTypes: true }).forEach((entry) => {
+    if (!entry.isDirectory()) return;
+    const src = path.join(SEED_UPLOADS_DIR, entry.name);
+    const dest = path.join(UPLOADS_DIR, entry.name);
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+    fs.readdirSync(src).forEach((file) => {
+      const destFile = path.join(dest, file);
+      if (!fs.existsSync(destFile)) fs.copyFileSync(path.join(src, file), destFile);
+    });
   });
-  if (Object.keys(missing).length) db.get('settings').assign(missing).write();
-  if (!db.has('messages').value()) db.set('messages', []).write();
-})();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +50,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'gsp-associates-secret-change-me',
@@ -70,21 +61,23 @@ app.use(session({
 app.use(flash());
 
 // Make settings & flash messages available to every view
-app.use((req, res, next) => {
-  res.locals.settings = db.get('settings').value();
-  res.locals.currentAdmin = req.session.admin || null;
-  res.locals.success = req.flash('success');
-  res.locals.error = req.flash('error');
-  res.locals.currentPath = req.path;
-  res.locals.unreadMessages = req.session && req.session.admin
-    ? db.get('messages').filter({ read: false }).size().value()
-    : 0;
-  next();
+app.use(async (req, res, next) => {
+  try {
+    res.locals.settings = await db.Settings.get();
+    res.locals.currentAdmin = req.session.admin || null;
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    res.locals.currentPath = req.path;
+    res.locals.unreadMessages = req.session && req.session.admin ? await db.Messages.countUnread() : 0;
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---- Upload handling ----
 function makeUploader(subfolder) {
-  const dir = path.join(__dirname, 'public', 'uploads', subfolder);
+  const dir = path.join(UPLOADS_DIR, subfolder);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, dir),
@@ -103,13 +96,40 @@ function makeUploader(subfolder) {
 }
 const uploadTeam = makeUploader('team');
 const uploadArticle = makeUploader('articles');
-const uploadGallery = makeUploader('gallery');
 const uploadPartner = makeUploader('partners');
 const uploadHero = makeUploader('hero');
 
+// Combined uploader for the gallery route: accepts either an image field or a video field
+const galleryVideoDir = path.join(UPLOADS_DIR, 'gallery-videos');
+if (!fs.existsSync(galleryVideoDir)) fs.mkdirSync(galleryVideoDir, { recursive: true });
+const galleryPhotoDir = path.join(UPLOADS_DIR, 'gallery');
+if (!fs.existsSync(galleryPhotoDir)) fs.mkdirSync(galleryPhotoDir, { recursive: true });
+
+const galleryStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, file.fieldname === 'video' ? galleryVideoDir : galleryPhotoDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const base = slugify(path.basename(file.originalname, ext), { lower: true, strict: true }).slice(0, 40);
+    cb(null, `${Date.now()}-${base || 'file'}${ext}`);
+  }
+});
+const galleryFileFilter = (req, file, cb) => {
+  if (file.fieldname === 'video') {
+    const allowed = /mp4|webm|mov|mkv|avi|m4v/;
+    const ok = allowed.test(path.extname(file.originalname).toLowerCase());
+    cb(ok ? null : new Error('Format video harus MP4, WEBM, MOV, MKV, atau AVI.'), ok);
+  } else {
+    const allowed = /jpeg|jpg|png|webp|gif|svg/;
+    const ok = allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype);
+    cb(ok ? null : new Error('Format foto harus JPG, PNG, WEBP, GIF, atau SVG.'), ok);
+  }
+};
+// Video files need a much larger size allowance than images (default here: 300MB)
+const uploadGalleryItem = multer({ storage: galleryStorage, fileFilter: galleryFileFilter, limits: { fileSize: 300 * 1024 * 1024 } });
+
 function removeFileIfLocal(urlPath) {
   if (!urlPath || !urlPath.startsWith('/uploads/')) return;
-  const full = path.join(__dirname, 'public', urlPath);
+  const full = path.join(UPLOADS_DIR, urlPath.replace(/^\/uploads\//, ''));
   fs.unlink(full, () => {});
 }
 
@@ -120,99 +140,103 @@ function requireAuth(req, res, next) {
   res.redirect('/admin/login');
 }
 
-function nowISO() { return new Date().toISOString(); }
-function newId(prefix) { return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`; }
+// ---- Small helper to avoid try/catch boilerplate on every async route ----
+function h(fn) {
+  return (req, res, next) => fn(req, res, next).catch(next);
+}
+
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /youtu\.be\/([a-zA-Z0-9_-]{6,})/,
+    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{6,})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{6,})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
 
 // =====================================================================
 // PUBLIC ROUTES
 // =====================================================================
-app.get('/', (req, res) => {
-  const team = db.get('team').orderBy('order').value();
-  const services = db.get('services').orderBy('order').value();
-  const articles = db.get('articles').filter({ published: true }).orderBy('date', 'desc').take(3).value();
-  const gallery = db.get('gallery').orderBy('date', 'desc').take(6).value();
-  const partners = db.get('partners').value();
+app.get('/', h(async (req, res) => {
+  const [team, services, articles, gallery, partners] = await Promise.all([
+    db.Team.all(), db.Services.all(), db.Articles.allPublished(3), db.Gallery.recent(6), db.Partners.all()
+  ]);
   res.render('index', {
     title: null,
     team: team.filter(t => t.role !== 'associate').slice(0, 4),
-    services,
-    articles,
-    gallery,
-    partners
+    services, articles, gallery, partners
   });
-});
+}));
 
 app.get('/tentang-kami', (req, res) => {
   res.render('about', { title: 'Tentang Kami' });
 });
 
-app.get('/layanan', (req, res) => {
-  const services = db.get('services').orderBy('order').value();
+app.get('/layanan', h(async (req, res) => {
+  const services = await db.Services.all();
   res.render('services', { title: 'Layanan Hukum', services });
-});
+}));
 
-app.get('/tim-kami', (req, res) => {
-  const team = db.get('team').orderBy('order').value();
+app.get('/tim-kami', h(async (req, res) => {
+  const team = await db.Team.all();
   res.render('team', {
     title: 'Tim Kami',
     managingPartner: team.filter(t => t.role === 'managing-partner'),
     partners: team.filter(t => t.role === 'partner'),
     associates: team.filter(t => t.role === 'associate')
   });
-});
+}));
 
-app.get('/berita', (req, res) => {
+app.get('/berita', h(async (req, res) => {
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const perPage = 6;
-  const all = db.get('articles').filter({ published: true }).orderBy('date', 'desc').value();
-  const total = all.length;
-  const articles = all.slice((page - 1) * perPage, page * perPage);
+  const [articles, total] = await Promise.all([
+    db.Articles.page((page - 1) * perPage, perPage), db.Articles.countPublished()
+  ]);
   res.render('news', {
     title: 'Berita & Artikel',
-    articles,
-    page,
+    articles, page,
     totalPages: Math.max(Math.ceil(total / perPage), 1)
   });
-});
+}));
 
-app.get('/berita/:slug', (req, res) => {
-  const article = db.get('articles').find({ slug: req.params.slug, published: true }).value();
+app.get('/berita/:slug', h(async (req, res) => {
+  const article = await db.Articles.findBySlug(req.params.slug);
   if (!article) return res.status(404).render('404', { title: 'Halaman Tidak Ditemukan' });
-  const related = db.get('articles')
-    .filter(a => a.published && a.slug !== article.slug)
-    .orderBy('date', 'desc').take(3).value();
+  const related = await db.Articles.related(article.slug, 3);
   res.render('news-detail', { title: article.title, article, related });
-});
+}));
 
-app.get('/galeri', (req, res) => {
-  const gallery = db.get('gallery').orderBy('date', 'desc').value();
+app.get('/galeri', h(async (req, res) => {
+  const gallery = await db.Gallery.all();
   res.render('gallery', { title: 'Galeri Kegiatan', gallery });
-});
+}));
 
-app.get('/mitra', (req, res) => {
-  const partners = db.get('partners').value();
+app.get('/mitra', h(async (req, res) => {
+  const partners = await db.Partners.all();
   res.render('partners', { title: 'Mitra Kerja Sama', partners });
-});
+}));
 
 app.get('/kontak', (req, res) => {
   res.render('contact', { title: 'Kontak Kami' });
 });
 
-app.post('/kontak', (req, res) => {
+app.post('/kontak', h(async (req, res) => {
   const { name, email, phone, subject, message } = req.body;
   if (!name || !message) {
     req.flash('error', 'Nama dan pesan wajib diisi.');
     return res.redirect('/kontak');
   }
-  db.get('messages').push({
-    id: newId('msg'),
-    name, email, phone, subject, message,
-    date: nowISO(),
-    read: false
-  }).write();
+  await db.Messages.create({ name, email, phone, subject, message });
   req.flash('success', 'Pesan Anda berhasil dikirim. Tim kami akan segera menghubungi Anda.');
   res.redirect('/kontak');
-});
+}));
 
 // =====================================================================
 // ADMIN AUTH
@@ -222,9 +246,9 @@ app.get('/admin/login', (req, res) => {
   res.render('admin/login', { title: 'Login Admin', layout: false });
 });
 
-app.post('/admin/login', (req, res) => {
+app.post('/admin/login', h(async (req, res) => {
   const { username, password } = req.body;
-  const admin = db.get('admin').value();
+  const admin = await db.Admin.get();
   if (admin && username === admin.username && bcrypt.compareSync(password || '', admin.passwordHash)) {
     req.session.admin = { username };
     req.flash('success', 'Berhasil masuk. Selamat datang kembali!');
@@ -232,248 +256,248 @@ app.post('/admin/login', (req, res) => {
   }
   req.flash('error', 'Username atau password salah.');
   res.redirect('/admin/login');
-});
+}));
 
 app.post('/admin/logout', requireAuth, (req, res) => {
   req.session.destroy(() => res.redirect('/admin/login'));
 });
 
-app.get('/admin', requireAuth, (req, res) => {
+app.get('/admin', requireAuth, h(async (req, res) => {
+  const [team, services, articles, gallery, partners, messages] = await Promise.all([
+    db.Team.count(), db.Services.count(), db.Articles.count(), db.Gallery.count(), db.Partners.count(), db.Messages.countUnread()
+  ]);
   res.render('admin/dashboard', {
     title: 'Dashboard',
-    counts: {
-      team: db.get('team').size().value(),
-      services: db.get('services').size().value(),
-      articles: db.get('articles').size().value(),
-      gallery: db.get('gallery').size().value(),
-      partners: db.get('partners').size().value(),
-      messages: db.get('messages').filter({ read: false }).size().value()
-    }
+    counts: { team, services, articles, gallery, partners, messages }
   });
-});
+}));
 
 // =====================================================================
 // ADMIN: TEAM (identitas anggota)
 // =====================================================================
-app.get('/admin/team', requireAuth, (req, res) => {
-  res.render('admin/team', { title: 'Kelola Tim', team: db.get('team').orderBy('order').value() });
-});
+app.get('/admin/team', requireAuth, h(async (req, res) => {
+  res.render('admin/team', { title: 'Kelola Tim', team: await db.Team.all() });
+}));
 
-app.post('/admin/team', requireAuth, uploadTeam.single('photo'), (req, res) => {
+app.post('/admin/team', requireAuth, uploadTeam.single('photo'), h(async (req, res) => {
   const { name, title, role, bio, order } = req.body;
-  db.get('team').push({
-    id: newId('team'),
-    name, title, role: role || 'associate',
-    bio: bio || '',
+  const count = await db.Team.count();
+  await db.Team.create({
+    name, title, role: role || 'associate', bio: bio || '',
     photo: req.file ? `/uploads/team/${req.file.filename}` : '',
-    order: parseInt(order) || (db.get('team').size().value() + 1)
-  }).write();
+    order: parseInt(order) || (count + 1)
+  });
   req.flash('success', 'Anggota tim baru berhasil ditambahkan.');
   res.redirect('/admin/team');
-});
+}));
 
-app.put('/admin/team/:id', requireAuth, uploadTeam.single('photo'), (req, res) => {
-  const item = db.get('team').find({ id: req.params.id }).value();
+app.put('/admin/team/:id', requireAuth, uploadTeam.single('photo'), h(async (req, res) => {
+  const item = await db.Team.find(req.params.id);
   if (!item) { req.flash('error', 'Data tidak ditemukan.'); return res.redirect('/admin/team'); }
   const { name, title, role, bio, order } = req.body;
-  const update = { name, title, role, bio, order: parseInt(order) || item.order };
+  let photo = null;
   if (req.file) {
     removeFileIfLocal(item.photo);
-    update.photo = `/uploads/team/${req.file.filename}`;
+    photo = `/uploads/team/${req.file.filename}`;
   }
-  db.get('team').find({ id: req.params.id }).assign(update).write();
+  await db.Team.update(req.params.id, { name, title, role, bio, order: parseInt(order) || item.order, photo });
   req.flash('success', 'Data anggota tim berhasil diperbarui.');
   res.redirect('/admin/team');
-});
+}));
 
-app.delete('/admin/team/:id', requireAuth, (req, res) => {
-  const item = db.get('team').find({ id: req.params.id }).value();
+app.delete('/admin/team/:id', requireAuth, h(async (req, res) => {
+  const item = await db.Team.find(req.params.id);
   if (item) removeFileIfLocal(item.photo);
-  db.get('team').remove({ id: req.params.id }).write();
+  await db.Team.remove(req.params.id);
   req.flash('success', 'Anggota tim dihapus.');
   res.redirect('/admin/team');
-});
+}));
 
 // =====================================================================
 // ADMIN: SERVICES (layanan hukum)
 // =====================================================================
-app.get('/admin/services', requireAuth, (req, res) => {
-  res.render('admin/services', { title: 'Kelola Layanan Hukum', services: db.get('services').orderBy('order').value() });
-});
+app.get('/admin/services', requireAuth, h(async (req, res) => {
+  res.render('admin/services', { title: 'Kelola Layanan Hukum', services: await db.Services.all() });
+}));
 
-app.post('/admin/services', requireAuth, (req, res) => {
+app.post('/admin/services', requireAuth, h(async (req, res) => {
   const { title, icon, desc, order } = req.body;
-  db.get('services').push({
-    id: newId('svc'),
-    title, icon: icon || 'document', desc: desc || '',
-    order: parseInt(order) || (db.get('services').size().value() + 1)
-  }).write();
+  const count = await db.Services.count();
+  await db.Services.create({ title, icon: icon || 'document', desc: desc || '', order: parseInt(order) || (count + 1) });
   req.flash('success', 'Layanan hukum baru berhasil ditambahkan.');
   res.redirect('/admin/services');
-});
+}));
 
-app.put('/admin/services/:id', requireAuth, (req, res) => {
-  const item = db.get('services').find({ id: req.params.id }).value();
+app.put('/admin/services/:id', requireAuth, h(async (req, res) => {
+  const item = await db.Services.find(req.params.id);
   if (!item) { req.flash('error', 'Layanan tidak ditemukan.'); return res.redirect('/admin/services'); }
   const { title, icon, desc, order } = req.body;
-  db.get('services').find({ id: req.params.id }).assign({
-    title, icon: icon || item.icon, desc, order: parseInt(order) || item.order
-  }).write();
+  await db.Services.update(req.params.id, { title, icon: icon || item.icon, desc, order: parseInt(order) || item.order });
   req.flash('success', 'Layanan hukum berhasil diperbarui.');
   res.redirect('/admin/services');
-});
+}));
 
-app.delete('/admin/services/:id', requireAuth, (req, res) => {
-  db.get('services').remove({ id: req.params.id }).write();
+app.delete('/admin/services/:id', requireAuth, h(async (req, res) => {
+  await db.Services.remove(req.params.id);
   req.flash('success', 'Layanan hukum dihapus.');
   res.redirect('/admin/services');
-});
+}));
 
 // =====================================================================
 // ADMIN: ARTICLES (artikel berita)
 // =====================================================================
-app.get('/admin/articles', requireAuth, (req, res) => {
-  res.render('admin/articles', { title: 'Kelola Artikel', articles: db.get('articles').orderBy('date', 'desc').value() });
-});
+app.get('/admin/articles', requireAuth, h(async (req, res) => {
+  res.render('admin/articles', { title: 'Kelola Artikel', articles: await db.Articles.all() });
+}));
 
 app.get('/admin/articles/new', requireAuth, (req, res) => {
   res.render('admin/article-form', { title: 'Tulis Artikel', article: null });
 });
 
-app.get('/admin/articles/:id/edit', requireAuth, (req, res) => {
-  const article = db.get('articles').find({ id: req.params.id }).value();
+app.get('/admin/articles/:id/edit', requireAuth, h(async (req, res) => {
+  const article = await db.Articles.find(req.params.id);
   if (!article) { req.flash('error', 'Artikel tidak ditemukan.'); return res.redirect('/admin/articles'); }
   res.render('admin/article-form', { title: 'Edit Artikel', article });
-});
+}));
 
-app.post('/admin/articles', requireAuth, uploadArticle.single('image'), (req, res) => {
+app.post('/admin/articles', requireAuth, uploadArticle.single('image'), h(async (req, res) => {
   const { title, excerpt, content, author, published } = req.body;
   let slug = slugify(title, { lower: true, strict: true });
   let uniqueSlug = slug, i = 1;
-  while (db.get('articles').find({ slug: uniqueSlug }).value()) uniqueSlug = `${slug}-${i++}`;
-  db.get('articles').push({
-    id: newId('art'),
-    title, slug: uniqueSlug,
-    excerpt: excerpt || '',
-    content: content || '',
+  while (await db.Articles.slugExists(uniqueSlug)) uniqueSlug = `${slug}-${i++}`;
+  await db.Articles.create({
+    title, slug: uniqueSlug, excerpt: excerpt || '', content: content || '',
     author: author || res.locals.settings.officeName,
     image: req.file ? `/uploads/articles/${req.file.filename}` : '',
-    date: nowISO(),
     published: published === 'on'
-  }).write();
+  });
   req.flash('success', 'Artikel berhasil dipublikasikan.');
   res.redirect('/admin/articles');
-});
+}));
 
-app.put('/admin/articles/:id', requireAuth, uploadArticle.single('image'), (req, res) => {
-  const item = db.get('articles').find({ id: req.params.id }).value();
+app.put('/admin/articles/:id', requireAuth, uploadArticle.single('image'), h(async (req, res) => {
+  const item = await db.Articles.find(req.params.id);
   if (!item) { req.flash('error', 'Artikel tidak ditemukan.'); return res.redirect('/admin/articles'); }
   const { title, excerpt, content, author, published } = req.body;
   const update = { title, excerpt, content, author, published: published === 'on' };
   if (title && title !== item.title) {
     let slug = slugify(title, { lower: true, strict: true });
     let uniqueSlug = slug, i = 1;
-    while (db.get('articles').find(a => a.slug === uniqueSlug && a.id !== item.id).value()) uniqueSlug = `${slug}-${i++}`;
+    while (await db.Articles.slugExists(uniqueSlug, item.id)) uniqueSlug = `${slug}-${i++}`;
     update.slug = uniqueSlug;
   }
   if (req.file) {
     removeFileIfLocal(item.image);
     update.image = `/uploads/articles/${req.file.filename}`;
   }
-  db.get('articles').find({ id: req.params.id }).assign(update).write();
+  await db.Articles.update(req.params.id, update);
   req.flash('success', 'Artikel berhasil diperbarui.');
   res.redirect('/admin/articles');
-});
+}));
 
-app.delete('/admin/articles/:id', requireAuth, (req, res) => {
-  const item = db.get('articles').find({ id: req.params.id }).value();
+app.delete('/admin/articles/:id', requireAuth, h(async (req, res) => {
+  const item = await db.Articles.find(req.params.id);
   if (item) removeFileIfLocal(item.image);
-  db.get('articles').remove({ id: req.params.id }).write();
+  await db.Articles.remove(req.params.id);
   req.flash('success', 'Artikel dihapus.');
   res.redirect('/admin/articles');
-});
+}));
 
 // =====================================================================
-// ADMIN: GALLERY (foto kegiatan)
+// ADMIN: GALLERY (foto & video kegiatan)
 // =====================================================================
-app.get('/admin/gallery', requireAuth, (req, res) => {
-  res.render('admin/gallery', { title: 'Kelola Galeri', gallery: db.get('gallery').orderBy('date', 'desc').value() });
-});
+app.get('/admin/gallery', requireAuth, h(async (req, res) => {
+  res.render('admin/gallery', { title: 'Kelola Galeri', gallery: await db.Gallery.all() });
+}));
 
-app.post('/admin/gallery', requireAuth, uploadGallery.single('image'), (req, res) => {
-  if (!req.file) { req.flash('error', 'Pilih foto terlebih dahulu.'); return res.redirect('/admin/gallery'); }
-  const { caption } = req.body;
-  db.get('gallery').push({
-    id: newId('gal'),
-    caption: caption || '',
-    image: `/uploads/gallery/${req.file.filename}`,
-    date: nowISO()
-  }).write();
+app.post('/admin/gallery', requireAuth, uploadGalleryItem.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), h(async (req, res) => {
+  const { caption, type, videoSource, videoUrl } = req.body;
+  const imageFile = req.files && req.files.image && req.files.image[0];
+  const videoFile = req.files && req.files.video && req.files.video[0];
+
+  if (type === 'video') {
+    if (videoSource === 'upload') {
+      if (!videoFile) { req.flash('error', 'Pilih file video terlebih dahulu.'); return res.redirect('/admin/gallery'); }
+      await db.Gallery.createVideo({ caption, videoSource: 'upload', videoUrl: `/uploads/gallery-videos/${videoFile.filename}` });
+      req.flash('success', 'Video kegiatan berhasil diunggah.');
+      return res.redirect('/admin/gallery');
+    }
+    const videoId = extractYouTubeId(videoUrl);
+    if (!videoId) {
+      req.flash('error', 'Link YouTube tidak valid. Pastikan link berupa youtube.com/watch?v=... atau youtu.be/...');
+      return res.redirect('/admin/gallery');
+    }
+    await db.Gallery.createVideo({ caption, videoSource: 'youtube', videoId, image: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` });
+    req.flash('success', 'Video kegiatan berhasil ditambahkan.');
+    return res.redirect('/admin/gallery');
+  }
+
+  if (!imageFile) { req.flash('error', 'Pilih foto terlebih dahulu.'); return res.redirect('/admin/gallery'); }
+  await db.Gallery.createPhoto({ caption, image: `/uploads/gallery/${imageFile.filename}` });
   req.flash('success', 'Foto kegiatan berhasil diunggah.');
   res.redirect('/admin/gallery');
-});
+}));
 
-app.delete('/admin/gallery/:id', requireAuth, (req, res) => {
-  const item = db.get('gallery').find({ id: req.params.id }).value();
-  if (item) removeFileIfLocal(item.image);
-  db.get('gallery').remove({ id: req.params.id }).write();
-  req.flash('success', 'Foto dihapus.');
+app.delete('/admin/gallery/:id', requireAuth, h(async (req, res) => {
+  const item = await db.Gallery.find(req.params.id);
+  if (item) {
+    if (item.type === 'photo') removeFileIfLocal(item.image);
+    else if (item.type === 'video' && item.videoSource === 'upload') removeFileIfLocal(item.videoUrl);
+  }
+  await db.Gallery.remove(req.params.id);
+  req.flash('success', 'Item galeri dihapus.');
   res.redirect('/admin/gallery');
-});
+}));
 
 // =====================================================================
 // ADMIN: PARTNERS (mitra perusahaan)
 // =====================================================================
-app.get('/admin/partners', requireAuth, (req, res) => {
-  res.render('admin/partners', { title: 'Kelola Mitra', partners: db.get('partners').value() });
-});
+app.get('/admin/partners', requireAuth, h(async (req, res) => {
+  res.render('admin/partners', { title: 'Kelola Mitra', partners: await db.Partners.all() });
+}));
 
-app.post('/admin/partners', requireAuth, uploadPartner.single('logo'), (req, res) => {
+app.post('/admin/partners', requireAuth, uploadPartner.single('logo'), h(async (req, res) => {
   const { name, description, url } = req.body;
-  db.get('partners').push({
-    id: newId('ptn'),
-    name, description: description || '', url: url || '',
-    logo: req.file ? `/uploads/partners/${req.file.filename}` : ''
-  }).write();
+  await db.Partners.create({ name, description, url, logo: req.file ? `/uploads/partners/${req.file.filename}` : '' });
   req.flash('success', 'Mitra perusahaan berhasil ditambahkan.');
   res.redirect('/admin/partners');
-});
+}));
 
-app.put('/admin/partners/:id', requireAuth, uploadPartner.single('logo'), (req, res) => {
-  const item = db.get('partners').find({ id: req.params.id }).value();
+app.put('/admin/partners/:id', requireAuth, uploadPartner.single('logo'), h(async (req, res) => {
+  const item = await db.Partners.find(req.params.id);
   if (!item) { req.flash('error', 'Mitra tidak ditemukan.'); return res.redirect('/admin/partners'); }
   const { name, description, url } = req.body;
-  const update = { name, description, url };
+  let logo = null;
   if (req.file) {
     removeFileIfLocal(item.logo);
-    update.logo = `/uploads/partners/${req.file.filename}`;
+    logo = `/uploads/partners/${req.file.filename}`;
   }
-  db.get('partners').find({ id: req.params.id }).assign(update).write();
+  await db.Partners.update(req.params.id, { name, description, url, logo });
   req.flash('success', 'Data mitra diperbarui.');
   res.redirect('/admin/partners');
-});
+}));
 
-app.delete('/admin/partners/:id', requireAuth, (req, res) => {
-  const item = db.get('partners').find({ id: req.params.id }).value();
+app.delete('/admin/partners/:id', requireAuth, h(async (req, res) => {
+  const item = await db.Partners.find(req.params.id);
   if (item) removeFileIfLocal(item.logo);
-  db.get('partners').remove({ id: req.params.id }).write();
+  await db.Partners.remove(req.params.id);
   req.flash('success', 'Mitra dihapus.');
   res.redirect('/admin/partners');
-});
+}));
 
 // =====================================================================
 // ADMIN: MESSAGES (pesan dari form kontak)
 // =====================================================================
-app.get('/admin/messages', requireAuth, (req, res) => {
-  db.get('messages').forEach(m => { m.read = true; }).write();
-  res.render('admin/messages', { title: 'Pesan Masuk', messages: db.get('messages').orderBy('date', 'desc').value() });
-});
+app.get('/admin/messages', requireAuth, h(async (req, res) => {
+  await db.Messages.markAllRead();
+  res.render('admin/messages', { title: 'Pesan Masuk', messages: await db.Messages.all() });
+}));
 
-app.delete('/admin/messages/:id', requireAuth, (req, res) => {
-  db.get('messages').remove({ id: req.params.id }).write();
+app.delete('/admin/messages/:id', requireAuth, h(async (req, res) => {
+  await db.Messages.remove(req.params.id);
   req.flash('success', 'Pesan dihapus.');
   res.redirect('/admin/messages');
-});
+}));
 
 // =====================================================================
 // ADMIN: SETTINGS (info kantor, sosial media, password)
@@ -482,7 +506,7 @@ app.get('/admin/settings', requireAuth, (req, res) => {
   res.render('admin/settings', { title: 'Pengaturan' });
 });
 
-app.post('/admin/settings', requireAuth, uploadHero.single('heroImage'), (req, res) => {
+app.post('/admin/settings', requireAuth, uploadHero.single('heroImage'), h(async (req, res) => {
   const {
     officeName, shortName, tagline, heroTitle, heroSubtitle,
     aboutText, visionText, missionText,
@@ -500,18 +524,18 @@ app.post('/admin/settings', requireAuth, uploadHero.single('heroImage'), (req, r
     ongoingCases: parseInt(ongoingCases) || 0
   };
   if (req.file) {
-    const current = db.get('settings').value();
+    const current = await db.Settings.get();
     removeFileIfLocal(current.heroImage);
     update.heroImage = `/uploads/hero/${req.file.filename}`;
   }
-  db.get('settings').assign(update).write();
+  await db.Settings.update(update);
   req.flash('success', 'Pengaturan berhasil disimpan.');
   res.redirect('/admin/settings');
-});
+}));
 
-app.post('/admin/settings/password', requireAuth, (req, res) => {
+app.post('/admin/settings/password', requireAuth, h(async (req, res) => {
   const { currentPassword, newPassword, confirmPassword } = req.body;
-  const admin = db.get('admin').value();
+  const admin = await db.Admin.get();
   if (!bcrypt.compareSync(currentPassword || '', admin.passwordHash)) {
     req.flash('error', 'Password saat ini salah.');
     return res.redirect('/admin/settings');
@@ -524,10 +548,10 @@ app.post('/admin/settings/password', requireAuth, (req, res) => {
     req.flash('error', 'Konfirmasi password baru tidak sama.');
     return res.redirect('/admin/settings');
   }
-  db.get('admin').assign({ passwordHash: bcrypt.hashSync(newPassword, 10) }).write();
+  await db.Admin.updatePassword(bcrypt.hashSync(newPassword, 10));
   req.flash('success', 'Password berhasil diganti.');
   res.redirect('/admin/settings');
-});
+}));
 
 // ---- Error / 404 handling ----
 app.use((req, res) => {
@@ -536,14 +560,31 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
+  let message = err.message || 'Terjadi kesalahan.';
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    message = 'Ukuran file terlalu besar. Maksimal 300MB untuk video dan 6MB untuk foto.';
+  }
   if (req.originalUrl.startsWith('/admin')) {
-    req.flash('error', err.message || 'Terjadi kesalahan.');
+    req.flash('error', message);
     return res.redirect('back');
   }
   res.status(500).send('Terjadi kesalahan pada server.');
 });
 
-app.listen(PORT, () => {
-  console.log(`GSP & Associates website berjalan di http://localhost:${PORT}`);
-  console.log(`Admin panel: http://localhost:${PORT}/admin/login`);
-});
+// ---- Start server only after the database is ready ----
+db.init()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`GSP & Associates website berjalan di http://localhost:${PORT}`);
+      console.log(`Admin panel: http://localhost:${PORT}/admin/login`);
+    });
+  })
+  .catch((err) => {
+    console.error('==================================================');
+    console.error(' Gagal terhubung ke database MySQL.');
+    console.error(' Pastikan DB_HOST, DB_USER, DB_PASSWORD, DB_NAME di .env sudah benar');
+    console.error(' dan database MySQL-nya sudah aktif/dibuat.');
+    console.error('==================================================');
+    console.error(err.message);
+    process.exit(1);
+  });
