@@ -27,6 +27,26 @@ async function query(sql, params) {
   return rows;
 }
 
+// Self-healing migration: if a table already existed before new columns were
+// added to the code (e.g. gallery gaining video support), CREATE TABLE IF NOT
+// EXISTS won't add them. This checks each table's real columns and ALTERs in
+// whatever is missing, so old deployments auto-repair on restart.
+async function ensureColumns(table, columns) {
+  const dbNameRows = await query('SELECT DATABASE() AS db');
+  const dbName = dbNameRows[0].db;
+  const existing = await query(
+    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+    [dbName, table]
+  );
+  const existingNames = new Set(existing.map(r => r.COLUMN_NAME));
+  for (const [col, def] of Object.entries(columns)) {
+    if (!existingNames.has(col)) {
+      console.log(`[migration] Menambahkan kolom hilang: ${table}.${col}`);
+      await query(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+    }
+  }
+}
+
 // ---------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------
@@ -93,6 +113,16 @@ async function createSchema() {
       subject VARCHAR(500), message TEXT, msgDate DATETIME, isRead TINYINT(1) DEFAULT 0
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
+
+  // Auto-repair tables that existed before newer columns were added to the schema.
+  await ensureColumns('gallery', {
+    caption: 'VARCHAR(500)', type: 'VARCHAR(20)', image: 'VARCHAR(500)',
+    videoSource: 'VARCHAR(20)', videoId: 'VARCHAR(100)', videoUrl: 'VARCHAR(500)',
+    itemDate: 'DATETIME'
+  });
+  await ensureColumns('settings', {
+    heroImage: 'VARCHAR(500)', mapEmbedUrl: 'VARCHAR(1000)', mapUrl: 'VARCHAR(1000)'
+  });
 }
 
 // ---------------------------------------------------------------------
