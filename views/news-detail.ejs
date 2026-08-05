@@ -19,11 +19,48 @@
 
 <div class="article-body"><%= article.content %></div>
 
-<div class="article-share">
+<div class="article-share" id="article-share">
   <span>Bagikan</span>
-  <a href="https://wa.me/?text=<%= encodeURIComponent(article.title + ' - ' + settings.officeName) %>" target="_blank" rel="noopener" aria-label="Bagikan ke WhatsApp"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.76.46 3.48 1.35 5L2 22l5.15-1.35c1.46.8 3.1 1.22 4.89 1.22 5.52 0 10-4.48 10-10s-4.48-10-10-10zm0 18.15c-1.6 0-3.16-.43-4.52-1.24l-.32-.19-3.05.8.82-2.97-.21-.32A8.13 8.13 0 013.87 12c0-4.5 3.66-8.15 8.17-8.15S20.2 7.5 20.2 12s-3.66 8.15-8.16 8.15z"/></svg></a>
-  <a href="mailto:?subject=<%= encodeURIComponent(article.title) %>" aria-label="Bagikan via Email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg></a>
+  <button type="button" class="share-copy" aria-label="Salin Link" data-label-default="Salin Link" data-label-done="Tersalin!">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+  </button>
+  <a href="#" class="share-whatsapp" target="_blank" rel="noopener" aria-label="Bagikan ke WhatsApp"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.76.46 3.48 1.35 5L2 22l5.15-1.35c1.46.8 3.1 1.22 4.89 1.22 5.52 0 10-4.48 10-10s-4.48-10-10-10zm0 18.15c-1.6 0-3.16-.43-4.52-1.24l-.32-.19-3.05.8.82-2.97-.21-.32A8.13 8.13 0 013.87 12c0-4.5 3.66-8.15 8.17-8.15S20.2 7.5 20.2 12s-3.66 8.15-8.16 8.15z"/></svg></a>
+  <a href="#" class="share-facebook" target="_blank" rel="noopener" aria-label="Bagikan ke Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/></svg></a>
+  <a href="#" class="share-twitter" target="_blank" rel="noopener" aria-label="Bagikan ke X (Twitter)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22H16.9l-5-6.5-5.7 6.5H2.9l8.1-9.3L2 2h6.6l4.5 6 5.8-6zm-1.1 18h1.7L7.3 3.9H5.5L17.8 20z"/></svg></a>
+  <a href="#" class="share-email" aria-label="Bagikan via Email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg></a>
+  <button type="button" class="share-native" aria-label="Opsi bagikan lainnya" style="display:none;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+  </button>
 </div>
+<script>
+  (function(){
+    var box = document.getElementById('article-share');
+    if (!box) return;
+    var url = window.location.href;
+    var title = <%- JSON.stringify(article.title) %>;
+
+    box.querySelector('.share-whatsapp').href = 'https://wa.me/?text=' + encodeURIComponent(title + ' - ' + url);
+    box.querySelector('.share-facebook').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+    box.querySelector('.share-twitter').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(title) + '&url=' + encodeURIComponent(url);
+    box.querySelector('.share-email').href = 'mailto:?subject=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(title + ' - ' + url);
+
+    var copyBtn = box.querySelector('.share-copy');
+    copyBtn.addEventListener('click', function(){
+      navigator.clipboard.writeText(url).then(function(){
+        copyBtn.classList.add('copied');
+        setTimeout(function(){ copyBtn.classList.remove('copied'); }, 1800);
+      });
+    });
+
+    var nativeBtn = box.querySelector('.share-native');
+    if (navigator.share) {
+      nativeBtn.style.display = 'flex';
+      nativeBtn.addEventListener('click', function(){
+        navigator.share({ title: title, url: url }).catch(function(){});
+      });
+    }
+  })();
+</script>
 
 <% if (related.length) { %>
 <section class="news-section">

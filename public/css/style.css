@@ -423,10 +423,18 @@ h1,h2,h3,h4{ font-family:var(--serif); font-weight:600; line-height:1.15; margin
 .article-cover img{ width:100%; aspect-ratio:16/8; object-fit:cover; border:1px solid var(--line); }
 .article-body{ max-width:760px; margin:0 auto; padding:0 24px 100px; color:var(--muted); font-size:17px; line-height:1.85; white-space:pre-line; }
 .article-body p{ margin-bottom:20px; }
-.article-share{ max-width:760px; margin:0 auto; padding:0 24px 80px; display:flex; align-items:center; gap:16px; }
+.article-share{ max-width:760px; margin:0 auto; padding:0 24px 80px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
 .article-share span{ font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted-2); }
-.article-share a{ width:38px; height:38px; border:1px solid var(--line-strong); display:flex; align-items:center; justify-content:center; transition:border-color .3s,color .3s; }
-.article-share a:hover{ border-color:var(--red-bright); color:var(--red-bright); }
+.article-share a, .article-share button{
+  width:38px; height:38px; border:1px solid var(--line-strong); display:flex; align-items:center; justify-content:center;
+  transition:border-color .3s,color .3s; background:transparent; color:var(--cream); cursor:pointer; position:relative; padding:0;
+}
+.article-share a:hover, .article-share button:hover{ border-color:var(--red-bright); color:var(--red-bright); }
+.share-copy.copied{ border-color:#1f7a3d; color:#8fe0a8; }
+.share-copy.copied::after{
+  content:'Tersalin!'; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+  background:#1f7a3d; color:#fff; font-size:11px; padding:4px 9px; border-radius:3px; white-space:nowrap;
+}
 .related-heading{ text-align:center; padding-top:60px; border-top:1px solid var(--line); }
 
 /* =========================================================
