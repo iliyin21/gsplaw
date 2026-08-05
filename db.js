@@ -241,6 +241,31 @@ async function migrateFromJsonIfPresent() {
   console.log('Migrasi: data lama dari storage/db.json berhasil dipindahkan ke MySQL.');
 }
 
+// One-time addition: 3 new practice areas requested after the site was already
+// live (Kepailitan/PKPU, Hak Kekayaan Intelektual, Legal Due Diligence). Runs on
+// every startup but only inserts rows whose id isn't already in the table, so it
+// is safe to leave in place permanently and never duplicates or overwrites
+// anything an admin has since edited or deleted.
+async function ensureNewServices() {
+  const additions = [
+    { id: 'kepailitan-pkpu', title: 'Kepailitan / PKPU', icon: 'document',
+      desc: 'Penanganan permohonan kepailitan dan Penundaan Kewajiban Pembayaran Utang (PKPU), baik mewakili debitor maupun kreditor.', order: 9 },
+    { id: 'hki', title: 'Hak Kekayaan Intelektual', icon: 'book',
+      desc: 'Pendaftaran, perlindungan, dan penyelesaian sengketa merek, hak cipta, paten, serta kekayaan intelektual lainnya.', order: 10 },
+    { id: 'legal-due-diligence', title: 'Legal Due Diligence', icon: 'building',
+      desc: 'Uji tuntas aspek hukum untuk kebutuhan akuisisi, investasi, dan kerja sama bisnis.', order: 11 }
+  ];
+  const existing = await query('SELECT id FROM services');
+  const existingIds = new Set(existing.map(r => r.id));
+  for (const sv of additions) {
+    if (!existingIds.has(sv.id)) {
+      console.log(`[migration] Menambahkan layanan baru: ${sv.title}`);
+      await query('INSERT INTO services (id, title, icon, descText, sortOrder) VALUES (?, ?, ?, ?, ?)',
+        [sv.id, sv.title, sv.icon, sv.desc, sv.order]);
+    }
+  }
+}
+
 // ---------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------
@@ -260,6 +285,7 @@ async function init() {
   await createSchema();
   await migrateFromJsonIfPresent();
   await seedIfEmpty();
+  await ensureNewServices();
 }
 
 // ---------------------------------------------------------------------
@@ -424,6 +450,14 @@ const Gallery = {
   },
   async recent(limit) {
     return query('SELECT id, caption, type, image, videoSource, videoId, videoUrl, itemDate AS `date` FROM gallery ORDER BY itemDate DESC LIMIT ?', [limit]);
+  },
+  // Most recent video-type item, used for the auto-play "aktivitas terbaru"
+  // widget on the homepage. Returns undefined if no video has been uploaded yet.
+  async latestVideo() {
+    const rows = await query(
+      "SELECT id, caption, type, image, videoSource, videoId, videoUrl, itemDate AS `date` FROM gallery WHERE type = 'video' ORDER BY itemDate DESC LIMIT 1"
+    );
+    return rows[0];
   },
   async count() {
     const [{ c }] = await query('SELECT COUNT(*) AS c FROM gallery');

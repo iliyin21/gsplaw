@@ -164,13 +164,13 @@ function extractYouTubeId(url) {
 // PUBLIC ROUTES
 // =====================================================================
 app.get('/', h(async (req, res) => {
-  const [team, services, articles, gallery, partners] = await Promise.all([
-    db.Team.all(), db.Services.all(), db.Articles.allPublished(3), db.Gallery.recent(6), db.Partners.all()
+  const [team, services, articles, gallery, partners, latestVideo] = await Promise.all([
+    db.Team.all(), db.Services.all(), db.Articles.allPublished(3), db.Gallery.recent(6), db.Partners.all(), db.Gallery.latestVideo()
   ]);
   res.render('index', {
     title: null,
     team: team.filter(t => t.role !== 'associate').slice(0, 4),
-    services, articles, gallery, partners
+    services, articles, gallery, partners, latestVideo
   });
 }));
 

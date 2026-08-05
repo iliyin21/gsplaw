@@ -1,5 +1,29 @@
 <%- include('partials/header') %>
 
+<% if (latestVideo) { %>
+<div class="activity-widget" id="activity-widget">
+  <div class="aw-head">
+    <span class="aw-label">Aktivitas Terbaru</span>
+    <div class="aw-actions">
+      <button type="button" class="aw-btn" id="aw-mute" aria-label="Aktifkan suara">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M19 5a9 9 0 0 1 0 14M15.5 8.5a4.5 4.5 0 0 1 0 7" stroke-linecap="round"/></svg>
+      </button>
+      <button type="button" class="aw-btn" id="aw-close" aria-label="Tutup">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+  <a href="/galeri" class="aw-body">
+    <% if (latestVideo.videoSource === 'upload') { %>
+    <video id="aw-video" src="<%= latestVideo.videoUrl %>" autoplay muted loop playsinline></video>
+    <% } else { %>
+    <iframe id="aw-frame" src="https://www.youtube.com/embed/<%= latestVideo.videoId %>?autoplay=1&mute=1&loop=1&playlist=<%= latestVideo.videoId %>&controls=0&rel=0&modestbranding=1" allow="autoplay; encrypted-media" frameborder="0"></iframe>
+    <% } %>
+  </a>
+  <a href="/galeri" class="aw-caption"><%= latestVideo.caption %></a>
+</div>
+<% } %>
+
 <section class="hero <%= settings.heroImage ? 'has-bg' : '' %>" <% if (settings.heroImage) { %>style="background-image:url('<%= settings.heroImage %>');"<% } %>>
   <% if (settings.heroImage) { %><div class="hero-overlay"></div><% } %>
   <div class="hero-crest"><img src="/images/logo.png" alt=""></div>

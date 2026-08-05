@@ -85,6 +85,41 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
   }
 
+  // Homepage "Aktivitas Terbaru" video widget — auto-plays muted, dismissible via X,
+  // stays hidden for the rest of the session once closed.
+  const activityWidget = document.getElementById('activity-widget');
+  if (activityWidget) {
+    let dismissed = false;
+    try { dismissed = sessionStorage.getItem('aw_dismissed') === '1'; } catch (e) {}
+
+    const awVideo = document.getElementById('aw-video');
+    const awMute = document.getElementById('aw-mute');
+    const awClose = document.getElementById('aw-close');
+
+    if (!dismissed) {
+      setTimeout(() => {
+        activityWidget.classList.add('show');
+        if (awVideo) awVideo.play().catch(() => {});
+      }, 900);
+    }
+
+    if (awClose) {
+      awClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        activityWidget.classList.remove('show');
+        if (awVideo) awVideo.pause();
+        try { sessionStorage.setItem('aw_dismissed', '1'); } catch (err) {}
+      });
+    }
+    if (awMute && awVideo) {
+      awMute.addEventListener('click', (e) => {
+        e.preventDefault();
+        awVideo.muted = !awVideo.muted;
+        awMute.classList.toggle('is-on', !awVideo.muted);
+      });
+    }
+  }
+
   // Auto-hide flash messages
   document.querySelectorAll('.flash').forEach(f => {
     setTimeout(() => { f.style.transition = 'opacity .5s'; f.style.opacity = '0'; setTimeout(() => f.remove(), 500); }, 5000);
