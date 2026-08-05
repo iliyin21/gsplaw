@@ -86,15 +86,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Homepage "Aktivitas Terbaru" video widget — auto-plays muted, dismissible via X,
-  // stays hidden for the rest of the session once closed.
+  // stays hidden for the rest of the session once closed. Tap anywhere on the video
+  // (or the speaker button) to turn sound on — browsers block unmuted autoplay, so
+  // sound can only start after this user interaction.
   const activityWidget = document.getElementById('activity-widget');
   if (activityWidget) {
     let dismissed = false;
     try { dismissed = sessionStorage.getItem('aw_dismissed') === '1'; } catch (e) {}
 
+    const awBody = document.getElementById('aw-body');
     const awVideo = document.getElementById('aw-video');
+    const awFrame = document.getElementById('aw-frame');
     const awMute = document.getElementById('aw-mute');
     const awClose = document.getElementById('aw-close');
+    const awHint = document.getElementById('aw-hint');
+    let awUnmuted = false;
 
     if (!dismissed) {
       setTimeout(() => {
@@ -103,19 +109,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 900);
     }
 
+    const toggleSound = () => {
+      awUnmuted = !awUnmuted;
+      if (awVideo) awVideo.muted = !awUnmuted;
+      if (awFrame) awFrame.src = awFrame.src.replace(awUnmuted ? 'mute=1' : 'mute=0', awUnmuted ? 'mute=0' : 'mute=1');
+      if (awMute) awMute.classList.toggle('is-on', awUnmuted);
+      if (awHint) awHint.classList.add('hide');
+    };
+
+    if (awBody) awBody.addEventListener('click', toggleSound);
+    if (awMute) {
+      awMute.addEventListener('click', (e) => { e.stopPropagation(); toggleSound(); });
+    }
     if (awClose) {
       awClose.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         activityWidget.classList.remove('show');
         if (awVideo) awVideo.pause();
         try { sessionStorage.setItem('aw_dismissed', '1'); } catch (err) {}
-      });
-    }
-    if (awMute && awVideo) {
-      awMute.addEventListener('click', (e) => {
-        e.preventDefault();
-        awVideo.muted = !awVideo.muted;
-        awMute.classList.toggle('is-on', !awVideo.muted);
       });
     }
   }
