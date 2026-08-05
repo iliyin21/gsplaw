@@ -13,13 +13,17 @@
       </button>
     </div>
   </div>
-  <a href="/galeri" class="aw-body">
+  <div class="aw-body" id="aw-body">
     <% if (latestVideo.videoSource === 'upload') { %>
     <video id="aw-video" src="<%= latestVideo.videoUrl %>" autoplay muted loop playsinline></video>
     <% } else { %>
     <iframe id="aw-frame" src="https://www.youtube.com/embed/<%= latestVideo.videoId %>?autoplay=1&mute=1&loop=1&playlist=<%= latestVideo.videoId %>&controls=0&rel=0&modestbranding=1" allow="autoplay; encrypted-media" frameborder="0"></iframe>
     <% } %>
-  </a>
+    <div class="aw-hint" id="aw-hint">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a4.5 4.5 0 0 1 0 7" stroke-linecap="round"/></svg>
+      Ketuk untuk suara
+    </div>
+  </div>
   <a href="/galeri" class="aw-caption"><%= latestVideo.caption %></a>
 </div>
 <% } %>
@@ -46,8 +50,7 @@
 
 <div class="trust-strip">
   <div class="trust-track">
-    <span>Hukum Pidana <em>&middot;</em></span><span>Hukum Perdata <em>&middot;</em></span><span>Hukum Keluarga <em>&middot;</em></span><span>Waris &amp; Gono-Gini <em>&middot;</em></span><span>Hukum Perusahaan <em>&middot;</em></span><span>Konsultasi Hukum <em>&middot;</em></span>
-    <span>Hukum Pidana <em>&middot;</em></span><span>Hukum Perdata <em>&middot;</em></span><span>Hukum Keluarga <em>&middot;</em></span><span>Waris &amp; Gono-Gini <em>&middot;</em></span><span>Hukum Perusahaan <em>&middot;</em></span><span>Konsultasi Hukum <em>&middot;</em></span>
+    <% [1,2].forEach(() => { services.forEach(s => { %><span><%= s.title %> <em>&middot;</em></span><% }) }) %>
   </div>
 </div>
 

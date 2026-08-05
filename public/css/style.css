@@ -291,7 +291,7 @@ h1,h2,h3,h4{ font-family:var(--serif); font-weight:600; line-height:1.15; margin
    MARQUEE / TRUST STRIP
    ========================================================= */
 .trust-strip{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--ink-2); overflow:hidden; padding:22px 0; }
-.trust-track{ display:flex; gap:64px; white-space:nowrap; animation:marquee 28s linear infinite; width:max-content; }
+.trust-track{ display:flex; gap:64px; white-space:nowrap; animation:marquee 50s linear infinite; width:max-content; }
 .trust-track span{ font-family:var(--serif); font-size:16px; color:var(--muted-2); letter-spacing:.03em; }
 .trust-track span em{ color:var(--red-bright); font-style:normal; }
 @keyframes marquee{ from{ transform:translateX(0);} to{ transform:translateX(-50%);} }
