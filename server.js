@@ -45,6 +45,11 @@ const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Trust the reverse proxy (Railway/Hostinger) so req.protocol reports
+// "https" correctly instead of "http" -- needed for correct absolute
+// URLs in Open Graph tags below.
+app.set('trust proxy', 1);
+
 // ---- Core middleware ----
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -69,6 +74,17 @@ app.use(async (req, res, next) => {
     res.locals.error = req.flash('error');
     res.locals.currentPath = req.path;
     res.locals.unreadMessages = req.session && req.session.admin ? await db.Messages.countUnread() : 0;
+
+    // ---- Default Open Graph / link-preview data (WhatsApp, Facebook, etc.) ----
+    // Individual routes can override res.locals.ogImage / ogTitle / ogDescription
+    // (see the /berita/:slug route) to show the article's own photo instead
+    // of the office logo when a specific page is shared.
+    const siteOrigin = `${req.protocol}://${req.get('host')}`;
+    res.locals.pageUrl = siteOrigin + req.originalUrl;
+    res.locals.ogImage = `${siteOrigin}/images/logo.png`;
+    res.locals.ogTitle = res.locals.settings.officeName;
+    res.locals.ogDescription = `${res.locals.settings.officeName} — Kantor hukum terpercaya untuk layanan hukum pidana, perdata, keluarga, waris, dan korporasi di Pemalang, Jawa Tengah.`;
+
     next();
   } catch (err) {
     next(err);
@@ -210,6 +226,17 @@ app.get('/berita/:slug', h(async (req, res) => {
   const article = await db.Articles.findBySlug(req.params.slug);
   if (!article) return res.status(404).render('404', { title: 'Halaman Tidak Ditemukan' });
   const related = await db.Articles.related(article.slug, 3);
+
+  // Override the default OG data with this article's own photo/title so the
+  // WhatsApp/Facebook link preview shows the article image, not the logo.
+  if (article.image) {
+    res.locals.ogImage = article.image.startsWith('http')
+      ? article.image
+      : `${req.protocol}://${req.get('host')}${article.image}`;
+  }
+  res.locals.ogTitle = article.title;
+  if (article.excerpt) res.locals.ogDescription = article.excerpt;
+
   res.render('news-detail', { title: article.title, article, related });
 }));
 

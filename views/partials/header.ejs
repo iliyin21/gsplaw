@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><%= typeof title !== 'undefined' && title ? title + ' — ' + settings.shortName : settings.officeName %></title>
 <meta name="description" content="<%= settings.officeName %> — Kantor hukum terpercaya untuk layanan hukum pidana, perdata, keluarga, waris, dan korporasi di Pemalang, Jawa Tengah.">
+
+<!-- Open Graph / link preview (WhatsApp, Facebook, dll) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= settings.officeName %>">
+<meta property="og:title" content="<%= ogTitle %>">
+<meta property="og:description" content="<%= ogDescription %>">
+<meta property="og:image" content="<%= ogImage %>">
+<meta property="og:url" content="<%= pageUrl %>">
+
+<!-- Twitter/X card (pakai data yang sama) -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= ogTitle %>">
+<meta name="twitter:description" content="<%= ogDescription %>">
+<meta name="twitter:image" content="<%= ogImage %>">
+
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/css/style.css">
